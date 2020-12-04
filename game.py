@@ -3,6 +3,7 @@ from PIL import Image
 from PIL import ImageTk
 from time import sleep
 import random
+from ailib import movePredictor
 
 # Root window declaration
 root = Tk()
@@ -14,21 +15,29 @@ hvhImage = PhotoImage(file="hvh.png")
 hvrImage = PhotoImage(file="hvr.png")
 nextButtonImage = PhotoImage(file="nextButton.png").subsample(5)
 versusIcon = PhotoImage(file="vsIcon.png").subsample(2)
+placeHolderImage = PhotoImage(file="white.png").subsample(2)
 
 # Player and Computer Icons
-computerIcon = ""
-playerIcon = ""
+computerIcon = cross
+playerIcon = zero
 playerName = ""
 computerName = "Shakti(AI)"
 
 # GameMode, 0 if Human vs Human, 1 if Human vs Robot
-mode = 1
+mode = 0
 
 # Turn, 0 for first player, 1 for second player
 turn = 0
 
 #Miscellaneoud Variables
-padButtons = [[Button(),Button(),Button()]]*3
+padButtons = []
+gameState = [] #-1 means empty, 0 means occupied by first player, 1 means occupied by 2nd player
+for i in range(3):
+    gameState.append([])
+    padButtons.append([])
+    for j in range(3):
+        padButtons[i].append(Button())
+        gameState[i].append(-1)
 
 # Method to destroy current window
 def destroyWindow(root,frame):
@@ -46,15 +55,103 @@ def switchWindow(root,entryFrame,exitFrame):
         root.update()
 
 # Methods that will be used in later stages
-# Turn Selection screen
+# Game screen
+def matchStateCheck():
+    global gameState
+    predictor = movePredictor(gameState)
+    if(predictor.wins(gameState,0)==True):
+        print("Player 1 wins")
+    elif(predictor.wins(gameState,1)==True):
+        print("Player 2 wins")
+    if len(predictor.empty_cells(gameState))==0 and predictor.game_over(gameState)==False:
+        print("Match Draw")
+    else:
+        print("Match Still in action...")
 
+def moveAI():
+    global gameState
+    global computerIcon
+    global padButtons
+    predictor = movePredictor(gameState)
+    data = predictor.predictMove()
+    aiX = data[0]
+    aiY = data[1]
+    gameState[aiX][aiY] = 1
+    padButtons[aiX][aiY].configure(image=computerIcon)
+    padButtons[aiX][aiY].unbind('<Button-1>')
+    print(data)
+
+def performAction(button,label,i,j):
+    global turn
+    global playerIcon
+    global computerIcon
+    global gameState
+    global mode
+    global root
+    gameState[i][j] = turn
+    root.update()
+    if mode==1:
+        print("Called from " + str(i) + "," + str(j))
+        if turn==0:
+            button["image"] = playerIcon 
+            moveAI()
+        else:
+            moveAI()
+    else:
+        if turn==1:
+            button["image"] = computerIcon
+            turn = 0
+            label["text"] = "It's " + playerName + "'s turn..."
+            root.update()
+        else:
+            button["image"] = playerIcon 
+            turn = 1
+            label["text"] = "It's " + computerName + "'s turn..."
+            root.update()
+    button.unbind('<Button-1>')
+    matchStateCheck()
+    
+def gameScreen(root):
+    global playerName
+    global computerName
+    global padButtons
+    global placeHolderImage
+    global playerIcon
+    global computerIcon
+    global turn
+    global playerName
+    global computerName
+    turnPlayerString = ""
+    if turn==0:
+        turnPlayerString = "It's " + playerName + "'s turn..."
+    else:
+        turnPlayerString = "It's " + computerName + "'s turn..."
+    playerIcon = playerIcon.subsample(2)
+    computerIcon = computerIcon.subsample(2)
+    frame = Frame(root,height=600,width=600,bg="white")
+    gameBoard = Frame(frame,bd=0,highlightthickness=0,height=400,width=400,bg="black")
+    gameLabel = Label(frame,bg="white", fg="orange", text=turnPlayerString,font = "Helvetica 16 bold italic")
+    coordinates = [0,140,280]
+    for i in range(3):
+        for j in range(3):
+            padButtons[i][j] = Button(gameBoard,bd=0,highlightthickness=0,width=120,height=120,bg="white",image=placeHolderImage)
+            padButtons[i][j].place(x=coordinates[j],y=coordinates[i])
+            padButtons[i][j].bind('<Button-1>',lambda event,a=i,b=j,button=padButtons[i][j],label=gameLabel:performAction(button,label,a,b))
+    gameBoard.place(x=100,y=50)
+    gameLabel.place(x=50,y=500)
+    frame.place(x=0,y=0)
+    if(mode==1 and turn==1):
+        moveAI()
+        turn =0
+    return frame
+
+# Turn Selection screen
 def setTurn(turnValue,frame):
     global turn
     turn = turnValue
-    print(turn)
-    # destroyWindow(root,frame)
-    # newFrame = gameScreen()
-    # switchWindow(root,newFrame,frame)
+    destroyWindow(root,frame)
+    newFrame = gameScreen(root)
+    switchWindow(root,newFrame,frame)
 
 def turnSelection(root):
     global versusIcon
@@ -75,6 +172,8 @@ def turnSelection(root):
 def changeIcon(choice,frame):
     global cross
     global zero
+    global playerIcon
+    global computerIcon
     if choice==0:
         playerIcon = cross
         computerIcon = zero
@@ -159,30 +258,7 @@ def chooseMode(root):
     hvhButton.place(x=0,y=175)
     hvrButton.place(x=300,y=175)
     frame.place(x=0,y=0)
-
-# Game screen
-def pop(i,j):
-    print(str(i)+","+str(j))
-
-def gameScreen(root,mode,turn):
-    global cross
-    global zero
-    global playerName
-    global computerName
-    global padButtons
-    cross = cross.subsample(2)
-    zero = zero.subsample(2)
-    frame = Frame(root,height=600,width=600,bg="white")
-    gameBoard = Frame(frame,bd=0,highlightthickness=0,height=400,width=400,bg="black")
-    coordinates = [0,140,280]
-    for i in range(3):
-        for j in range(3):
-            padButtons[i][j] = Button(gameBoard,bd=0,highlightthickness=0,width=120,height=120,bg="white",image=cross)
-            padButtons[i][j].place(x=coordinates[j],y=coordinates[i])
-            padButtons[i][j].bind('<Button-1>',lambda event,a=i,b=j:pop(a,b))
-    gameBoard.place(x=100,y=50)
-    frame.place(x=0,y=0)
-
+    
 width = 600
 height = 600
 root.title("Tic Tac Toe - Player vs AI")
@@ -191,5 +267,5 @@ root.configure(bg="white")
 
 # Main Call
 # chooseMode(root)
-gameScreen(root,1,1)
+gameScreen(root)
 root.mainloop()
