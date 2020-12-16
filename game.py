@@ -1,3 +1,7 @@
+'''
+Author: Deepak Chauhan
+Github: https://github.com/RoyalEagle73/
+'''
 from tkinter import *
 from PIL import Image
 from PIL import ImageTk
@@ -24,7 +28,7 @@ homeImage = PhotoImage(file="images/home.png")
 # Player and Computer Icons
 computerIcon = cross
 playerIcon = zero
-playerName = "Deepak Chauhan"
+playerName = ""
 computerName = "Shakti(AI)"
 
 # GameMode, 0 if Human vs Human, 1 if Human vs Robot
