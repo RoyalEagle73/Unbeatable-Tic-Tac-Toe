@@ -40,7 +40,7 @@ class movePredictor:
     def game_over(self,state):
         return self.wins(state, self.HUMAN) or self.wins(state, self.COMP)
 
-
+    
     def empty_cells(self,state):
         cells = []
         for x, row in enumerate(state):
