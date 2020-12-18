@@ -6,8 +6,11 @@ from tkinter import *
 from PIL import Image
 from PIL import ImageTk
 from time import sleep
-import random
+from lib.dbHandler import databaseHandler
 from lib.ailib import movePredictor
+
+# Database object
+db = databaseHandler()
 
 # Root window declaration
 root = Tk()
@@ -309,7 +312,7 @@ def chooseMode(root):
 def goHome(root,frame):
     global mode
     destroyWindow(root,frame)
-    newFrame = chooseMode(root)
+    newFrame = homeScreen(root)
     switchWindow(root,newFrame,frame)
 
 def resetGame(root,currentFrame):
@@ -337,6 +340,7 @@ def newGame(root,currentFrame):
     destroyWindow(root,currentFrame)
 
 def resultScreen(root,winner):
+    global mode
     global playerName
     global computerName
     global playerIcon
@@ -355,11 +359,17 @@ def resultScreen(root,winner):
         computerImageLabel.pack(side=RIGHT)
         winnerFrame.place(x=100,y=150)
         status = "Match Draw !!"
+        db.incrementScore("Draw",mode)
     else:
         if winner==1:
             computerImageLabel.pack(side=TOP)
             status = computerName + " Won !!"
+            if mode==1:
+                db.incrementScore("Computer",mode)
+            else:
+                db.incrementScore(computerName,mode)
         else:
+            db.incrementScore(playerName,mode)
             playerImageLabel.pack(side=TOP)
             status = playerName + " Won !!"
         winnerFrame.place(x=200,y=150)
@@ -389,12 +399,13 @@ def homeScreen(root):
     logoImageLabel = Label(frame, bg="white", image=logo, bd=0, highlightthickness=0)
     letsPlayButton = Button(frame, bg="white", image=letsPlayImage, bd=0, highlightthickness=0,command=lambda: homeScreenSwitch(root,frame,chooseMode(root)))
     aboutUsButton = Button(frame, bg="white", image=aboutUsImage, bd=0, highlightthickness=0)
-    recordsButton = Button(frame, bg="white", image=recordsImage, bd=0, highlightthickness=0)
+    recordsButton = Button(frame, bg="white", image=recordsImage, bd=0, highlightthickness=0,command=lambda: print(db.returnTable(0)))
     logoImageLabel.place(x=50, y=0)
     letsPlayButton.place(x=200, y=300)
     aboutUsButton.place(x=200,y=400) 
     recordsButton.place(x=200,y=500)
     frame.place(x=0,y=-0)
+    return frame
 
 width = 600
 height = 600
@@ -404,5 +415,4 @@ root.configure(bg="white")
 
 # Main Call
 homeScreen(root)
-# chooseMode(root)
 root.mainloop()
