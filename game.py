@@ -13,6 +13,10 @@ from lib.ailib import movePredictor
 root = Tk()
 
 # Logos and Images
+letsPlayImage = PhotoImage(file="images/letsPlay.png")
+aboutUsImage = PhotoImage(file="images/aboutUs.png")
+recordsImage = PhotoImage(file="images/records.png")
+logo = PhotoImage(file="images/logo.png").subsample(4)
 titleBackground = PhotoImage(file="images/titleBg.png")
 turnBackground = PhotoImage(file="images/turnTitle.png")
 cross = PhotoImage(file="images/crossLogo.png").subsample(2)
@@ -28,7 +32,7 @@ homeImage = PhotoImage(file="images/home.png")
 # Player and Computer Icons
 computerIcon = cross
 playerIcon = zero
-playerName = ""
+playerName = "Deepak"
 computerName = "Shakti(AI)"
 
 # GameMode, 0 if Human vs Human, 1 if Human vs Robot
@@ -87,7 +91,7 @@ def matchStateCheck():
 
 def moveAI():
     global gameState
-    global computerIcon
+    global computerIconplayer
     global padButtons
     predictor = movePredictor(gameState)
     data = predictor.predictMove()
@@ -154,15 +158,17 @@ def gameScreen(root):
     turnBackgroundLabel = Label(frame,bg="white",image=turnBackground, width=600, height=100)
     gameBoard = Frame(frame,bd=0,highlightthickness=0,height=400,width=400,bg="black")
     gameLabel = Label(frame,bg="#33ffff", fg="#ef3e67", text=turnPlayerString,font = "times 14 bold")
+    resetButton = Button(frame,width=15,height=1,fg="#ff0000",bg="#f2fc9f", bd=0, highlightthickness=0,text="Reset Game ⟳", justify="center",font="times 18 bold italic", command= lambda: resetGame(root,frame))
     coordinates = [0,140,280]
     for i in range(3):
         for j in range(3):
             padButtons[i][j] = Button(gameBoard,bd=0,highlightthickness=0,width=120,height=120,bg="white",image=placeHolderImage)
             padButtons[i][j].place(x=coordinates[j],y=coordinates[i])
             padButtons[i][j].bind('<Button-1>',lambda event,a=i,b=j,button=padButtons[i][j],label=gameLabel,f=frame:performAction(button,label,f,a,b))
-    gameBoard.place(x=100,y=50)
-    turnBackgroundLabel.place(x=0,y=490)
-    gameLabel.place(x=160,y=525)
+    turnBackgroundLabel.place(x=0,y=0)
+    gameLabel.place(x=160,y=35)
+    gameBoard.place(x=100,y=100)
+    resetButton.place(x=195,y=535)
     frame.place(x=0,y=0)
     if(mode==1 and turn==1):
         moveAI()
@@ -306,6 +312,13 @@ def goHome(root,frame):
     newFrame = chooseMode(root)
     switchWindow(root,newFrame,frame)
 
+def resetGame(root,currentFrame):
+    global playerIcon
+    global computerIcon
+    playerIcon = playerIcon.zoom(2)
+    computerIcon = computerIcon.zoom(2)
+    newGame(root,currentFrame)
+    
 def resetGameBoard():
     global gameState
     for row in gameState:
@@ -315,6 +328,8 @@ def resetGameBoard():
 def newGame(root,currentFrame):
     global turn
     global turnBackupForNewGame
+    global playerIcon
+    global computerIcon
     resetGameBoard()
     turn = turnBackupForNewGame
     newFrame = gameScreen(root)
@@ -361,6 +376,26 @@ def resultScreen(root,winner):
     mainFrame.place(x=0,y=0)
     return mainFrame
 
+def homeScreenSwitch(root,frame, switchTo):
+    destroyWindow(root,frame)
+    switchWindow(root,switchTo,frame)
+
+def homeScreen(root):
+    global logo
+    global aboutUsImage
+    global recordsImage
+    global letsPlayImage
+    frame = Frame(root, width=600, height=600, bg="white")
+    logoImageLabel = Label(frame, bg="white", image=logo, bd=0, highlightthickness=0)
+    letsPlayButton = Button(frame, bg="white", image=letsPlayImage, bd=0, highlightthickness=0,command=lambda: homeScreenSwitch(root,frame,chooseMode(root)))
+    aboutUsButton = Button(frame, bg="white", image=aboutUsImage, bd=0, highlightthickness=0)
+    recordsButton = Button(frame, bg="white", image=recordsImage, bd=0, highlightthickness=0)
+    logoImageLabel.place(x=50, y=0)
+    letsPlayButton.place(x=200, y=300)
+    aboutUsButton.place(x=200,y=400) 
+    recordsButton.place(x=200,y=500)
+    frame.place(x=0,y=-0)
+
 width = 600
 height = 600
 root.title("Tic Tac Toe - Revamped")
@@ -368,5 +403,6 @@ root.geometry( str(width) + "x" + str(height))
 root.configure(bg="white")
 
 # Main Call
-chooseMode(root)
+homeScreen(root)
+# chooseMode(root)
 root.mainloop()
