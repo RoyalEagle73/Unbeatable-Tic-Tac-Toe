@@ -504,6 +504,5 @@ root.geometry( str(width) + "x" + str(height))
 root.configure(bg="white")
 
 # Main Call
-# homeScreen(root)
-infoScreen(root)
+homeScreen(root)
 root.mainloop()
