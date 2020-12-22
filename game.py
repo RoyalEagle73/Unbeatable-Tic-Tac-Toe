@@ -11,11 +11,14 @@ from lib.ailib import movePredictor
 
 # Database object
 db = databaseHandler()
+data = [] #List to contain data
+clearTableCode = 0 #0 for HumanVHuman Table and 1 for HumanVAI Table
 
 # Root window declaration
 root = Tk()
 
 # Logos and Images
+nitJsrLogo = PhotoImage(file="images/nitJsrLogo.png").subsample(2)
 letsPlayImage = PhotoImage(file="images/letsPlay.png")
 aboutUsImage = PhotoImage(file="images/aboutUs.png")
 recordsImage = PhotoImage(file="images/records.png")
@@ -61,14 +64,22 @@ def destroyWindow(root,frame):
     root.update()
 
 # Entry Animation
-def switchWindow(root,entryFrame,exitFrame):
+def switchWindow(root,entryFrame,exitFrame,toLeft=True):
     initX = 0
-    while initX>=-600:
-        entryFrame.place(x=initX+600,y=0)
-        exitFrame.place(x=initX,y=0)
-        initX -= 20
-        sleep(0.01)
-        root.update()
+    if toLeft==True:
+        while initX>=-600:
+            entryFrame.place(x=initX+600,y=0)
+            exitFrame.place(x=initX,y=0)
+            initX -= 20
+            sleep(0.01)
+            root.update()
+    else:
+        while initX<=600:
+            entryFrame.place(x=initX-600,y=0)
+            exitFrame.place(x=initX,y=0)
+            initX += 20
+            sleep(0.01)
+            root.update()
 
 def backAnimation(root,entryFrame,exitFrame):
     initX = -600
@@ -309,11 +320,11 @@ def chooseMode(root):
     return frame
     
 # Result Screen
-def goHome(root,frame):
+def goHome(root,frame,toRight=True):
     global mode
     destroyWindow(root,frame)
     newFrame = homeScreen(root)
-    switchWindow(root,newFrame,frame)
+    switchWindow(root,newFrame,frame,toRight)
 
 def resetGame(root,currentFrame):
     global playerIcon
@@ -398,13 +409,92 @@ def homeScreen(root):
     frame = Frame(root, width=600, height=600, bg="white")
     logoImageLabel = Label(frame, bg="white", image=logo, bd=0, highlightthickness=0)
     letsPlayButton = Button(frame, bg="white", image=letsPlayImage, bd=0, highlightthickness=0,command=lambda: homeScreenSwitch(root,frame,chooseMode(root)))
-    aboutUsButton = Button(frame, bg="white", image=aboutUsImage, bd=0, highlightthickness=0)
-    recordsButton = Button(frame, bg="white", image=recordsImage, bd=0, highlightthickness=0,command=lambda: print(db.returnTable(0)))
+    aboutUsButton = Button(frame, bg="white", image=aboutUsImage, bd=0, highlightthickness=0,command=lambda: homeScreenSwitch(root,frame,infoScreen(root)))
+    recordsButton = Button(frame, bg="white", image=recordsImage, bd=0, highlightthickness=0,command=lambda: homeScreenSwitch(root,frame,dbScreen(root)))
     logoImageLabel.place(x=50, y=0)
     letsPlayButton.place(x=200, y=300)
     aboutUsButton.place(x=200,y=400) 
     recordsButton.place(x=200,y=500)
     frame.place(x=0,y=-0)
+    return frame
+
+def getDatabaseData(value,changeButton,oldButton,frame):
+    global db
+    global data
+    global clearTableCode
+    if value==2:
+        db.clearTable(clearTableCode)
+    else:
+        changeButton.configure(bg="white",fg="red")
+        oldButton.configure(bg="grey",fg="black")
+        clearTableCode = value
+    data = db.returnTable(clearTableCode)
+    if len(data) > 10:
+        rowSize = 10
+    else:
+        rowSize = len(data)
+    nameLabel = Label(frame, width=30,text="NAME",fg='red',bg="khaki", justify="center",font=('times',16,'bold italic'))
+    scoreLabel = Label(frame, width=30,text="SCORE",fg='red',bg="khaki", font=('times',16,'bold italic'))
+    nameLabel.grid(row=0, column=0,pady=10) 
+    scoreLabel.grid(row=0, column=1,pady=10)
+    frame.configure(bg="light sky blue")
+    for i in range(10): 
+        for j in range(2):
+            if i%2==0:
+                bgColor = "light salmon"
+            else:
+                bgColor = "light salmon"
+            displayText = ""
+            if i<len(data):
+                displayText = str(data[i][j])
+            e = Label(frame, width=30,text=displayText,bg=bgColor,fg='blue', font=('times',16,'italic')) 
+            e.grid(row=i+1, column=j,pady=10) 
+    print(data)
+
+def dbScreen(root):
+    global data
+    frame = Frame(root, width=600, height=600, bg="white")
+    buttonFrame = Frame(frame,bg="white")
+    dataFrame = Frame(frame,bg="white")
+    resetButtonFrame = Frame(frame,bg="white")
+    dbButtonHvH = Button(buttonFrame,bd=0,width=25,bg="white",highlightthickness=0, text="Human v/s Human", font="times 16 bold italic")
+    dbButtonHvAI = Button(buttonFrame,bd=0,width=25,bg="white",highlightthickness=0, text="Human v/s AI", font="times 16 bold italic")
+    dbButtonHvH.configure(command=lambda value=0,changeButton=dbButtonHvH,oldButton=dbButtonHvAI,frame=dataFrame : getDatabaseData(value,changeButton,oldButton,frame))
+    dbButtonHvAI.configure(command=lambda value=1,changeButton=dbButtonHvAI,oldButton=dbButtonHvH,frame=dataFrame: getDatabaseData(value,changeButton,oldButton,frame))
+    resetButton = Button(frame,text="⚠ Reset Records ⚠", bd=1, highlightthickness=0,bg="khaki", fg="red",font="times 12 bold italic")
+    resetButton.configure(command=lambda value=2,changeButton=dbButtonHvH,oldButton=dbButtonHvAI,frame=dataFrame : getDatabaseData(value,changeButton,oldButton,frame))
+    homeButton = Button(frame,text="Go Home 🏠", bd=1, highlightthickness=0,bg="khaki", fg="green",font="times 12 bold italic",command=lambda: goHome(root,frame,False))
+    buttonFrame.place(x=0,y=0)
+    dbButtonHvH.pack(side=LEFT)
+    dbButtonHvAI.pack(side=RIGHT)
+    dataFrame.place(x=0,y=50)
+    resetButton.place(x=320,y=565)
+    homeButton.place(x=100,y=565)
+    resetButtonFrame.place(x=00,y=500)
+    frame.place(x=0,y=0)
+    dbButtonHvH.invoke()
+    return frame
+
+def infoScreen(root):
+    global nitJsrLogo
+    developersName = "Vipin Singh Negi\nShobhit Verma\nAmit Gupta\nAbhishek Mishra\nKrishna\nDeepak Chauhan\nAparna Yaduvanshi"
+    rollNumbers = "(2018PGCACA58)\n(2018PGCACA59)\n(2018PGCACA60)\n(2018PGCACA61)\n(2018PGCACA62)\n(2018PGCACA63)\n(2018PGCACA65)"
+    frame = Frame(root, width=600, height=600, bg="white")
+    homeButton = Button(frame,text="Go Home 🏠", bd=1, highlightthickness=0,bg="khaki", fg="green",font="times 12 bold italic",command=lambda: goHome(root,frame,False))
+    nitJsrNameLabel = Label(frame, text = "National Institute of Technology\nJamshedpur",bg="white", fg="black",font="times 22 bold italic")
+    nitJsrLogoLabel = Label(frame, image = nitJsrLogo, bg="white")
+    professorNameLabel = Label(frame, text = "A Decision Support System Assignment under the supervision of\nDr. Dilip Kumar Shaw\n(Associate Professor and Head of Department)\nDepartment of Computer Application",bg="white", fg="black",font="times 14 italic")
+    developedByLabel = Label(frame, text = "Developed By:",bg="white", fg="black",font="times 15 bold")
+    namesLabel = Label(frame, text = developersName,bg="white", fg="black",justify="left",font="times 14 italic")
+    rollNumberLabel = Label(frame,text=rollNumbers,bg="white", fg="black",justify="left",font="times 14 italic")
+    nitJsrNameLabel.place(x=100,y=10)
+    nitJsrLogoLabel.place(x=230,y=90)
+    professorNameLabel.place(x=70,y=280)
+    developedByLabel.place(x=10,y=380)
+    namesLabel.place(x=10,y=405)
+    rollNumberLabel.place(x=300,y=405)
+    homeButton.place(x=230,y=565)
+    frame.place(x=0,y=0)
     return frame
 
 width = 600
@@ -414,5 +504,6 @@ root.geometry( str(width) + "x" + str(height))
 root.configure(bg="white")
 
 # Main Call
-homeScreen(root)
+# homeScreen(root)
+infoScreen(root)
 root.mainloop()

@@ -40,11 +40,8 @@ class databaseHandler():
             self.tableName = "humanVHuman"
         else:
             self.tableName = "humanVAI"
-        cursor = self.conn.execute("Select * from "+self.tableName + " ORDER BY NAME")
-        data = []
-        for row in cursor:
-            data.append([row[0],row[1]])
-        return data
+        cursor = self.conn.execute("Select * from "+self.tableName + " ORDER BY SCORE DESC")
+        return cursor.fetchall()
         
     def __del__(self):
         self.conn.close()
